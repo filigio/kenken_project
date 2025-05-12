@@ -18,6 +18,15 @@ public class Grid {
     }
 
     public int getSize() { return size; } //dimensione griglia
+
+    public int[][] getValuesCopy() { // Crea una nuova matrice di interi della stessa dimensione della griglia originale
+        //facendo una copia profonda della matrice originale
+        int[][] copy = new int[size][size];
+        for(int r = 0; r < size; r++) {
+            System.arraycopy(values[r], 0, copy[r], 0, size);
+        }
+        return copy;
+    }
     public int getValue(int row, int col) { return values[row][col]; } //valore Corrente di una cella
     public void setValue(int row, int col, int value) { values[row][col] = value; } //imposta valore di una cella
     public void addBlock(Block block) { blocks.add(block); } //per aggiungere un vincolo o blocco alla griglia
