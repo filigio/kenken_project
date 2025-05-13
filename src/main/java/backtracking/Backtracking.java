@@ -18,6 +18,12 @@ public class Backtracking {
         this.n =g.getSize();
         this.work = g.getValuesCopy();
         this.free = new ArrayList<>();
+
+        //lista delle celle vuote, ossia le posizioni della griglia che devono ancora essere riempite.
+        for (int r = 0; r < n; r++)
+            for (int c = 0; c < n; c++)
+                if (work[r][c] == 0)
+                    free.add(new Cell(r, c));
     }
     /**
      * Trova la prima soluzione (per il momento trovaimo la rima soluzione, per vedere se funziona correttamente la calsse.
