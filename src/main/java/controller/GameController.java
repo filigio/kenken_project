@@ -1,7 +1,11 @@
 package main.java.controller;
 
+import main.java.backtracking.Backtracking;
 import main.java.model.Grid;
 import main.java.model.Block;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Classe per gestire il controller logico di KenKen.
@@ -33,5 +37,14 @@ public class GameController {
     // Aggiunge un blocco (vincolo) alla griglia
     public void addBlock(Block b) {
         grid.addBlock(b);
+    }
+    /**SOLVE: */
+    public List<int[][]> solvePuzzle() {
+        Backtracking solver = new Backtracking(grid);       // usa il solver
+        int[][] sol = solver.solve();                        // calcola la soluzione
+
+        return (sol == null)
+                ? Collections.emptyList()
+                : Collections.singletonList(sol);            // restituisce una sola soluzione
     }
 }
