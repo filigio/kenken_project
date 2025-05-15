@@ -12,11 +12,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GridView extends JFrame {
-
+    // Modalità interazione: o si selezionano blocchi, o si inseriscono numeri
+    private enum Mode {
+        DEFINE_BLOCKS, INSERT_NUMBERS
+    }
     private final int size = 3;
     private final JLabel[][] cellLabels = new JLabel[size][size];
     private final GameController controller = new GameController(size);
     private final boolean[][] selected = new boolean[size][size];  // tiene traccia delle celle selezionate
+    private Mode currentMode = Mode.DEFINE_BLOCKS;
 
     public GridView() {
         super("KenKen - GUI Base");
@@ -38,8 +42,28 @@ public class GridView extends JFrame {
                 cell.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseClicked(MouseEvent e) {
-                        selected[finalR][finalC] = !selected[finalR][finalC];
-                        cell.setBackground(selected[finalR][finalC] ? Color.ORANGE : null);
+                        if (currentMode == Mode.DEFINE_BLOCKS) {
+                            selected[finalR][finalC] = !selected[finalR][finalC];
+                            cell.setBackground(selected[finalR][finalC] ? Color.ORANGE : null);
+                        } else if (currentMode == Mode.INSERT_NUMBERS) {
+                            String valStr = JOptionPane.showInputDialog(GridView.this,
+                                    "Inserisci un numero (1..." + size + ") oppure 0 per cancellare:");
+                            if (valStr != null) {
+                                try {
+                                    int v = Integer.parseInt(valStr);
+                                    if (v < 0 || v > size) {
+                                        JOptionPane.showMessageDialog(GridView.this,
+                                                "Valore non valido (0‥" + size + ")");
+                                    } else {
+                                        controller.setGridValue(finalR, finalC, v);
+                                        cell.setText(v == 0 ? "" : String.valueOf(v));
+                                    }
+                                } catch (NumberFormatException ex) {
+                                    JOptionPane.showMessageDialog(GridView.this,
+                                            "Inserimento non valido!");
+                                }
+                            }
+                        }
                     }
                 });
 
@@ -50,8 +74,25 @@ public class GridView extends JFrame {
         // Pannello con bottoni
         JPanel bottomPanel = new JPanel(new FlowLayout());
 
+        // Radio buttons per modalità
+        JRadioButton rbDef = new JRadioButton("Definisci blocchi", true);
+        JRadioButton rbIns = new JRadioButton("Inserisci numeri");
+
+        ButtonGroup group = new ButtonGroup();
+        group.add(rbDef);
+        group.add(rbIns);
+
+        // Listener per cambiare modalità
+        rbDef.addActionListener(e -> currentMode = Mode.DEFINE_BLOCKS);
+        rbIns.addActionListener(e -> currentMode = Mode.INSERT_NUMBERS);
+
+        bottomPanel.add(rbDef);
+        bottomPanel.add(rbIns);
+
         JButton createBlockBtn = new JButton("Crea Blocco");
         JButton solveBtn = new JButton("Solve");
+
+        // Azione per risolvere il puzzle
         solveBtn.addActionListener(e -> {
             var solutions = controller.solvePuzzle();
             if (solutions.isEmpty()) {
@@ -108,6 +149,11 @@ public class GridView extends JFrame {
             int target = Integer.parseInt(tgt);
             Block b = Block.createBlock(op.trim(), target, cells);
             controller.addBlock(b);
+
+            // Colorazione delle celle per evidenziare il blocco
+            for (Cell c : cells) {
+                cellLabels[c.getRow()][c.getCol()].setBackground(new Color(180, 220, 255)); // azzurro chiaro
+            }
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Target non valido!");
         } catch (IllegalArgumentException ex) {
