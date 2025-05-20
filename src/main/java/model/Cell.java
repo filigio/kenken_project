@@ -1,9 +1,12 @@
 package main.java.model;
 
+import java.io.Serializable;
+
 /**
  * Rappresenta una singola cella (row, col) nella griglia KenKen
  */
-public class Cell {
+public class Cell implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final int row;
     private final int col;
 

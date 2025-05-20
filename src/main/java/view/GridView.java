@@ -64,8 +64,15 @@ public class GridView extends JFrame {
         /** solve → inserisce sempre la prima soluzione */
         JButton solve = new JButton("Solve");
         solve.addActionListener(e -> onSolve());
-        p.add(solve);
+        p.add(solve);p.add(Box.createVerticalStrut(10));
 
+        /** Save e Load*/
+        JButton save = new JButton("Save");
+        save.addActionListener(e -> onSave());
+        JButton load = new JButton("Load");
+        load.addActionListener(e -> onLoad());
+        p.add(save); p.add(Box.createVerticalStrut(10));
+        p.add(load);
         return p;
     }
 
@@ -112,6 +119,35 @@ public class GridView extends JFrame {
         gridPanel.repaint(); // Ridisegna con la soluzione
     }
 
+    /** Metodo che gestisce il salvataggio della partita su file
+     Permette all’utente di salvare su file .ser (serializzato) e ricaricarlo */
+    private void onSave() {
+        JFileChooser fc = new JFileChooser(); // Crea selettore file
+        if (fc.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                controller.saveGrid(fc.getSelectedFile()); // Salva la griglia nel file scelto
+                JOptionPane.showMessageDialog(this, "Partita salvata con successo!");
+            } catch (Exception ex) {
+                // Mostra errore se qualcosa va storto
+                JOptionPane.showMessageDialog(this, "Errore durante il salvataggio: " + ex.getMessage());
+            }
+        }
+    }
+
+    // Metodo che gestisce il caricamento della partita da file
+    private void onLoad() {
+        JFileChooser fc = new JFileChooser(); // Crea selettore file
+        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                controller.loadGrid(fc.getSelectedFile()); // Carica la griglia dal file scelto
+                gridPanel.repaint(); // Ridisegna la griglia aggiornata
+                JOptionPane.showMessageDialog(this, "Partita caricata con successo!");
+            } catch (Exception ex) {
+                // Mostra errore se qualcosa va storto
+                JOptionPane.showMessageDialog(this, "Errore durante il caricamento: " + ex.getMessage());
+            }
+        }
+    }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(GridView::new);

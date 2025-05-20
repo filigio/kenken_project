@@ -1,12 +1,14 @@
 package main.java.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /**Rappresenta la griglia di gioco KenKen
  * Per gestire lo stato corrente del gioco e i vincoli dei blocchi
  */
-public class Grid {
+public class Grid implements Serializable {
+    private static final long serialVersionUID = 1L;
     private final int size; // Dimensione griglia
     private final int[][] values; //la matrice dei valori correnti delle celle
     private final List<Block> blocks; //lista dei blocchi della griglia (ogni cella deve appartenere ad un blcco)

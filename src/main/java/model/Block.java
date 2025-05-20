@@ -1,12 +1,13 @@
 package main.java.model;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Classe astratta che rappresenta un blocco KenKen
  */
-public abstract class Block {
-
+public abstract class Block implements Serializable {
+    private static final long serialVersionUID = 1L;
     protected int target; // risultato atteso dell'operazione del blocco ()
     protected List<Cell> cells; // celle del blocco
 

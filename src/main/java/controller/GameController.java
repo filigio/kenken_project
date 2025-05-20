@@ -6,6 +6,7 @@ import main.java.model.Grid;
 import main.java.model.Block;
 
 import javax.swing.*;
+import java.io.*;
 import java.util.Collections;
 import java.util.List;
 
@@ -135,6 +136,26 @@ public class GameController {
 
         return null;
     }
+
+
+    /** SAVE e LOAD */
+    // Metodo per salvare lo stato della griglia su file
+    public void saveGrid(File f) throws IOException {
+        // Crea un ObjectOutputStream collegato al file specificato
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(f))) {
+            oos.writeObject(grid); // Scrive l'intera griglia (inclusi blocchi e valori)
+        }
+    }
+
+    // Metodo per caricare una griglia salvata da file
+    public void loadGrid(File f) throws IOException, ClassNotFoundException {
+        // Crea un ObjectInputStream collegato al file specificato
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f))) {
+            this.grid = (Grid) ois.readObject(); // Legge la griglia salvata
+            this.size = grid.getSize(); // Aggiorna la dimensione interna
+        }
+    }
+
 
     // Metodo extra per sviluppo: stampa la griglia in console
     public void printGridToConsole() {
