@@ -10,14 +10,27 @@ import java.util.List;
 
 public class GridView extends JFrame {
 
-    private final GameController controller;
-    private final KenKenGridPanel gridPanel;
-    private final int size;
+    private GameController controller;
+    private KenKenGridPanel gridPanel;
+    private int size;
 
     public GridView() {
         super("KenKen GUI con Pannello Laterale"); // Titolo della finestra
 
-        this.size = 3; // Dimensione fissa iniziale della griglia [da implementare successivmante in modo tale da poter scegliere la grandezza]
+        // Selezione della dimensione iniziale della griglia tramite dialogo
+        Integer[] dims = {3, 4, 5, 6};
+        Integer sel = (Integer) JOptionPane.showInputDialog(
+                this,
+                "Scegli la dimensione della griglia:",
+                "Dimensione",
+                JOptionPane.PLAIN_MESSAGE,
+                null,
+                dims,
+                3); // valore predefinito
+
+        if (sel == null) System.exit(0); // Se annulla, chiude il programma
+
+        this.size = sel; // Imposta la dimensione scelta
         this.controller = new GameController(size); // Inizializza il controller con la dimensione
 
         setDefaultCloseOperation(EXIT_ON_CLOSE); // Chiude il programma alla chiusura della finestra
