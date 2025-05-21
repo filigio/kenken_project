@@ -99,6 +99,17 @@ public class GridView extends JFrame {
         p.add(resetAll);
         p.add(Box.createVerticalStrut(10));
 
+        /** Change Size*/
+        // Pulsante per cambiare la dimensione della griglia
+        JButton changeSize = new JButton("Cambia dimensione");
+        changeSize.addActionListener(e -> {// Azione associata al clic sul pulsante
+            dispose();      // Chiude la finestra attuale (rimuove tutto)
+            new GridView(); // Crea una nuova GUI KenKen, partendo da zero (chiede nuova dimensione)
+        });
+        p.add(changeSize);
+        p.add(Box.createVerticalStrut(10));
+
+
         /** Save e Load*/
         JButton save = new JButton("Save");
         save.addActionListener(e -> onSave());
@@ -108,7 +119,11 @@ public class GridView extends JFrame {
         p.add(load);
         return p;
     }
-
+    
+    /**
+     * Metodo chiamato quando l'utente clicca su "Aggiungi Blocco".
+     * Permette di creare un blocco matematico (vincolo) sulle celle selezionate.
+     */
     private void onAddBlock() {
         List<Cell> cells = gridPanel.consumeSelectedCells(); // Ottiene e svuota selezione
         if (cells.isEmpty()) {
