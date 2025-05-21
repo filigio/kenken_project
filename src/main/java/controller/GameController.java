@@ -42,6 +42,7 @@ public class GameController {
         grid.addBlock(b);
     }
 
+    public void resetGrid()                      { grid.clear(); }
 
     /**SOLVE: */
     public List<int[][]> solvePuzzle() {

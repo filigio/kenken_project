@@ -33,4 +33,14 @@ public class Grid implements Serializable {
     public void setValue(int row, int col, int value) { values[row][col] = value; } //imposta valore di una cella
     public void addBlock(Block block) { blocks.add(block); } //per aggiungere un vincolo o blocco alla griglia
     public List<Block> getBlocks() { return blocks; }
+
+    /** Metodo che azzera tutti i valori della griglia di gioco */
+    public void clear() {
+        // Scorre ogni riga della griglia
+        for(int r = 0; r < size; r++) {
+            for(int c = 0; c < size; c++) {
+                values[r][c] = 0; // ed imposta il valore della cella[r][c] a 0
+            }
+        }
+    }
 }

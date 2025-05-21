@@ -79,6 +79,26 @@ public class GridView extends JFrame {
         solve.addActionListener(e -> onSolve());
         p.add(solve);p.add(Box.createVerticalStrut(10));
 
+        /** Reset*/
+        // Pulsante per resettare solo i valori (senza rimuovere blocchi)
+        JButton resetVals = new JButton("Reset (solo valori)");
+        resetVals.addActionListener(e -> {
+            controller.resetGrid();      // Azzera solo i valori numerici
+            gridPanel.repaint();         // Ridisegna la griglia aggiornata
+        });
+        p.add(resetVals); // Aggiunge il pulsante al pannello
+        p.add(Box.createVerticalStrut(10)); // Spazio verticale
+
+        // Pulsante per resettare tutto (valori + blocchi)
+        JButton resetAll = new JButton("Reset Tutto");
+        resetAll.addActionListener(e -> {
+            controller.resetGrid();                          // Azzera i valori
+            controller.getGrid().getBlocks().clear();        // Rimuove tutti i blocchi
+            gridPanel.repaint();                             // Aggiorna visivamente
+        });
+        p.add(resetAll);
+        p.add(Box.createVerticalStrut(10));
+
         /** Save e Load*/
         JButton save = new JButton("Save");
         save.addActionListener(e -> onSave());
