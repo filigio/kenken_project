@@ -43,4 +43,10 @@ public class Grid implements Serializable {
             }
         }
     }
+    //metodo per copiare i valori delle griglie appartenente al file che voglio caricare nella paritta
+    public void setValues(int[][] vals) {
+        for (int r = 0; r < size; r++)
+            for (int c = 0; c < size; c++)
+                values[r][c] = vals[r][c];
+    }
 }

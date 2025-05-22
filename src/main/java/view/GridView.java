@@ -3,9 +3,12 @@ package main.java.view;
 import main.java.controller.GameController;
 import main.java.model.Block;
 import main.java.model.Cell;
+import main.java.model.Grid;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
 import java.util.List;
 
 public class GridView extends JFrame {
@@ -119,7 +122,7 @@ public class GridView extends JFrame {
         p.add(load);
         return p;
     }
-    
+
     /**
      * Metodo chiamato quando l'utente clicca su "Aggiungi Blocco".
      * Permette di creare un blocco matematico (vincolo) sulle celle selezionate.
@@ -182,13 +185,34 @@ public class GridView extends JFrame {
         }
     }
 
-    // Metodo che gestisce il caricamento della partita da file
     private void onLoad() {
-        JFileChooser fc = new JFileChooser(); // Crea selettore file
+        JFileChooser fc = new JFileChooser();// Crea selettore file
         if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
-                controller.loadGrid(fc.getSelectedFile()); // Carica la griglia dal file scelto
-                gridPanel.repaint(); // Ridisegna la griglia aggiornata
+                // Carica la griglia da file
+                ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fc.getSelectedFile()));
+                Grid loadedGrid = (Grid) ois.readObject(); //prendendo un oggetto Grid salvato precedentemente su file
+
+                // Recupera la dimensione della griglia caricata
+                int newSize = loadedGrid.getSize();
+
+                // Chiedi conferma se la dimensione è diversa da quella attuale
+                if (newSize != size) {
+                    int ans = JOptionPane.showConfirmDialog(this,
+                            "La griglia salvata è di dimensione " + newSize + "x" + newSize +
+                                    ". Vuoi caricarla comunque?",
+                            "Cambio dimensione",
+                            JOptionPane.YES_NO_OPTION);
+                    if (ans != JOptionPane.YES_OPTION) return;
+                }
+
+                // Crea un nuovo controller con la griglia caricata
+                GameController newController = new GameController(newSize);
+                newController.getGrid().setValues(loadedGrid.getValuesCopy());
+                newController.getGrid().getBlocks().addAll(loadedGrid.getBlocks());
+
+                // Ricostruisci dinamicamente la GUI
+                reloadFromController(newController);
                 JOptionPane.showMessageDialog(this, "Partita caricata con successo!");
             } catch (Exception ex) {
                 // Mostra errore se qualcosa va storto
@@ -196,7 +220,25 @@ public class GridView extends JFrame {
             }
         }
     }
+    /**
+     * Ricrea dinamicamente controller e griglia dopo il caricamento.
+     */
 
+    private void reloadFromController(GameController newController) {
+        this.controller = newController; //  Sostituisce il vecchio GameController con quello caricato da file
+        this.size = newController.getGrid().getSize(); //Aggiorna la dimensione interna (size) in base alla griglia appena caricata
+
+        if (gridPanel != null) {
+            remove(gridPanel); // Rimuove il vecchio pannello griglia
+        }
+
+        this.gridPanel = new KenKenGridPanel(controller); // Crea nuova griglia
+        add(gridPanel, BorderLayout.CENTER);              // Aggiunge la nuova griglia
+
+        revalidate(); // Aggiorna il layout della finestra
+        repaint();    // Ridisegna visivamente la GUI
+        pack();       // Ridimensiona la finestra alla nuova griglia
+    }
     public static void main(String[] args) {
         SwingUtilities.invokeLater(GridView::new);
     }
