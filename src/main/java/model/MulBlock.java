@@ -26,24 +26,8 @@ public class MulBlock extends Block {
 
         // Se incompleto, il prodotto parziale non deve superare il target
         if (incomplete)
-            return prod <= target && noDuplicates(grid);
+            return prod <= target && noRowColDuplicates(grid);
         else
-            return prod == target && noDuplicates(grid); // Se completo, deve essere esatto
-    }
-    //Verifico assenza duplicati
-    private boolean noDuplicates(int[][] grid) {
-        for (int i = 0; i < cells.size(); i++) {
-            for (int j = i + 1; j < cells.size(); j++) {
-                Cell c1 = cells.get(i);// Prende due celle da confrontare
-                Cell c2 = cells.get(j);
-                int v1 = grid[c1.getRow()][c1.getCol()];
-                int v2 = grid[c2.getRow()][c2.getCol()];
-                // Se sono sulla stessa riga o colonna e hanno lo stesso valore (diverso da 0)
-                if ((c1.getRow() == c2.getRow() || c1.getCol() == c2.getCol()) && v1 == v2 && v1 != 0) {
-                    return false;// Violazione: duplicato trovato
-                }
-            }
-        }
-        return true;// Nessun duplicato
+            return prod == target && noRowColDuplicates(grid); // Se completo, deve essere esatto
     }
 }
