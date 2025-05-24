@@ -22,26 +22,23 @@ public abstract class Block implements Serializable {
     // da implemntare i vari vincoli per i blocchi (come +-*/)
 
     /**
-     * Metodo statico per la creazione di blocchi in base all'operatore aritmetico (+, -, *, /).
-     * Attualmente centralizza la logica all'interno della classe Block.
-     *
-     * Da sostituire successivamente con l'implementazione del vero
-     *    Factory Method Pattern: definire un'interfaccia BlockFactory e
-     *    delegare la creazione a sottoclassi dedicate (es. SumBlockFactory, ecc.).
+     * Verifica che non esistano duplicati (ovviamente che non siano ≠0) su stessa riga o colonna
+     * fra tutte le celle di questo blocco.
      */
-
-    public static Block createBlock(String operator, int result, List<Cell> cells) {
-        switch(operator) {
-            case "+":
-                return new SumBlock(result, cells);  // classi da implementare per
-            case "-":
-                return new SubBlock(result, cells);
-            case "*":
-                return new MulBlock(result, cells);
-            case "/":
-                return new DivBlock(result, cells);
-            default:
-                throw new IllegalArgumentException("Operatore non valido: " + operator);
+    protected boolean noRowColDuplicates(int[][] grid) {
+        for (int i = 0; i < cells.size(); i++) {
+            for (int j = i + 1; j < cells.size(); j++) {
+                Cell c1 = cells.get(i);// Prende due celle da confrontare ossia la i-esima e la j-esima
+                Cell c2 = cells.get(j);
+                //poi prendo i rispettivi valori effettivi della cella
+                int v1 = grid[c1.getRow()][c1.getCol()];
+                int v2 = grid[c2.getRow()][c2.getCol()];
+                // Se sono sulla stessa riga o colonna e hanno lo stesso valore (diverso da 0)
+                if ((c1.getRow() == c2.getRow() || c1.getCol() == c2.getCol()) && v1 == v2 && v1 != 0) {
+                    return false;// Violazione: duplicato trovato
+                }
+            }
         }
+        return true;
     }
 }

@@ -1,6 +1,7 @@
 package main.java.view;
 
 import main.java.controller.GameController;
+import main.java.factory.BlockFactoryManager;
 import main.java.model.Block;
 import main.java.model.Cell;
 import main.java.model.Grid;
@@ -143,7 +144,8 @@ public class GridView extends JFrame {
 
         try {
             int target = Integer.parseInt(tgt); // Converte il target
-            Block b = Block.createBlock(op.trim(), target, cells); // Crea il blocco
+            Block b = BlockFactoryManager.getFactory(op.trim())
+                    .createBlock(target, cells);   // Crea il blocco
             controller.addBlock(b); // Aggiunge alla griglia
             gridPanel.repaint(); // Ridisegna la griglia
         } catch (NumberFormatException ex) {
