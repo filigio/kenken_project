@@ -4,9 +4,11 @@ import main.java.backtracking.Backtracking;
 import main.java.model.Cell;
 import main.java.model.Grid;
 import main.java.model.Block;
+import main.java.observer.GridObserver;
 
 import javax.swing.*;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -21,11 +23,29 @@ public class GameController {
     private Grid grid;  // griglia del gioco
     private int size;   // dimensione della griglia (NxN)
 
+    private final List<GridObserver> observers = new ArrayList<>(); // Lista di tutti gli observer registrati che vogliono essere notificati
+
     // Costruttore: inizializza la griglia di dimensione specificata
     public GameController(int size) {
         this.grid = new Grid(size);
         this.size = size;
     }
+
+    // METODI PER GESTIRE OSSERVATORI
+    public void addObserver(GridObserver o) {
+        observers.add(o);                        // Aggiunge un observer alla lista
+    }
+
+    public void removeObserver(GridObserver o) {
+        observers.remove(o);                     // Rimuove un observer (se non serve più)
+    }
+
+    private void notifyObservers() {
+        for (GridObserver o : observers) {       // Per ogni observer registrato
+            o.onGridChanged();                   // chiama il suo metodo di aggiornamento
+        }
+    }
+
 
     // Restituisce l'oggetto Grid per accedere allo stato del gioco
     public Grid getGrid() {
@@ -35,11 +55,13 @@ public class GameController {
     // Imposta un valore in una cella della griglia (riga, colonna)
     public void setGridValue(int row, int col, int value) {
         grid.setValue(row, col, value);
+        notifyObservers();
     }
 
     // Aggiunge un blocco (vincolo) alla griglia
     public void addBlock(Block b) {
         grid.addBlock(b);
+        notifyObservers();
     }
 
     public void resetGrid()                      { grid.clear(); }
@@ -154,6 +176,7 @@ public class GameController {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f))) {
             this.grid = (Grid) ois.readObject(); // Legge la griglia salvata
             this.size = grid.getSize(); // Aggiorna la dimensione interna
+            notifyObservers();                   // Notifica gli observer
         }
     }
 
