@@ -64,7 +64,10 @@ public class GameController {
         notifyObservers();
     }
 
-    public void resetGrid()                      { grid.clear(); }
+    public void resetGrid() {
+        grid.clear();
+        notifyObservers();
+    }
 
     /**SOLVE: */
     public List<int[][]> solvePuzzle() {
@@ -95,7 +98,7 @@ public class GameController {
     }
 
     // Verifica che tutte le celle siano riempite (≠ 0)
-    private boolean isGridComplete() {
+    public boolean isGridComplete() {
         for (int[] row : grid.getValuesCopy())
             for (int val : row)
                 if (val == 0) return false;
@@ -103,7 +106,7 @@ public class GameController {
     }
 
     // Verifica righe, colonne e blocchi
-    private String validateCurrentGrid() {
+    public String validateCurrentGrid() {
         int[][] v = grid.getValuesCopy();
 
         // Righe

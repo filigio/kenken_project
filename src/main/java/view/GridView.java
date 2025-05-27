@@ -48,8 +48,7 @@ public class GridView extends JFrame {
         JLabel statusLabel = new JLabel("Griglia pronta");    // Etichetta che mostra lo stato
         add(statusLabel, BorderLayout.NORTH);                 // Aggiungila nella parte superiore della GUI
 
-        controller.addObserver(new GridStatusObserver(statusLabel));
-
+        controller.addObserver(new GridStatusObserver(controller, statusLabel, gridPanel));
         pack(); // Dimensionamento automatico della finestra
         setLocationRelativeTo(null); // Centra la finestra sullo schermo
         setVisible(true); // Rende visibile la GUI
