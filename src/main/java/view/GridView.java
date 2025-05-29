@@ -17,6 +17,8 @@ public class GridView extends JFrame {
     private GameController controller;
     private KenKenGridPanel gridPanel;
     private int size;
+    private JButton prevBtn;
+    private JButton nextBtn;
 
     public GridView() {
         super("KenKen GUI con Pannello Laterale"); // Titolo della finestra
@@ -76,6 +78,18 @@ public class GridView extends JFrame {
         p.add(rbDef);
         p.add(rbIns);
         p.add(Box.createVerticalStrut(10));
+
+        /** Next e Previus*/
+
+        prevBtn = new JButton("Previous");
+        p.add(prevBtn);
+        p.add(Box.createVerticalStrut(5));
+
+        nextBtn = new JButton("Next");
+        p.add(nextBtn);
+        p.add(Box.createVerticalStrut(10));
+
+
 
         /** Aggiungi blocco*/
         JButton addBlock = new JButton("Aggiungi Blocco");
