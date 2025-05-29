@@ -45,6 +45,10 @@ public class GridView extends JFrame {
         add(gridPanel, BorderLayout.CENTER); // Aggiunge la griglia al centro
         add(buildSidePanel(), BorderLayout.EAST); // Aggiunge il pannello laterale a destra
 
+        JLabel statusLabel = new JLabel("Griglia pronta");    // Etichetta che mostra lo stato
+        add(statusLabel, BorderLayout.NORTH);                 // Aggiungila nella parte superiore della GUI
+
+        controller.addObserver(new GridStatusObserver(controller, statusLabel, gridPanel));
         pack(); // Dimensionamento automatico della finestra
         setLocationRelativeTo(null); // Centra la finestra sullo schermo
         setVisible(true); // Rende visibile la GUI
