@@ -10,10 +10,12 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 public class GridView extends JFrame {
-
+    private List<int[][]> solutions = new ArrayList<>();
+    private int solIdx = -1;
     private GameController controller;
     private KenKenGridPanel gridPanel;
     private int size;
@@ -50,7 +52,7 @@ public class GridView extends JFrame {
         JLabel statusLabel = new JLabel("Griglia pronta");    // Etichetta che mostra lo stato
         add(statusLabel, BorderLayout.NORTH);                 // Aggiungila nella parte superiore della GUI
 
-        controller.addObserver(new GridStatusObserver(controller, statusLabel, gridPanel));
+        controller.addObserver(new GridStatusObserver(controller, statusLabel, prevBtn, nextBtn, gridPanel));
         pack(); // Dimensionamento automatico della finestra
         setLocationRelativeTo(null); // Centra la finestra sullo schermo
         setVisible(true); // Rende visibile la GUI
@@ -80,14 +82,15 @@ public class GridView extends JFrame {
         p.add(Box.createVerticalStrut(10));
 
         /** Next e Previus*/
-
         prevBtn = new JButton("Previous");
-        p.add(prevBtn);
-        p.add(Box.createVerticalStrut(5));
-
         nextBtn = new JButton("Next");
-        p.add(nextBtn);
-        p.add(Box.createVerticalStrut(10));
+        JPanel navPanel = new JPanel();
+        navPanel.add(prevBtn);
+        navPanel.add(nextBtn);
+        p.add(navPanel);
+
+        prevBtn.addActionListener(e -> showSolution(solIdx - 1));
+        nextBtn.addActionListener(e -> showSolution(solIdx + 1));
 
 
 
@@ -175,7 +178,7 @@ public class GridView extends JFrame {
 
     /** Inserisce la prima soluzione se esiste, altrimenti mostra un messaggio. */
     private void onSolve() {
-        var solutions = controller.solvePuzzle(); // Risolve la griglia
+        solutions = controller.solvePuzzle(5);
         if (solutions.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Nessuna soluzione trovata.");
             return;
@@ -188,6 +191,29 @@ public class GridView extends JFrame {
                 controller.setGridValue(r, c, sol[r][c]); // Applica la soluzione
 
         gridPanel.repaint(); // Ridisegna con la soluzione
+        solIdx = 0;
+        showSolution(solIdx);
+    }
+
+
+    /** Metodo per visualizzare una soluzione specifica (in base all'indice)*/
+    private void showSolution(int idx) {
+        if (idx < 0 || idx >= solutions.size()) return;  // Evita errori se l'indice è fuori dai limiti della lista
+
+        solIdx = idx;           // Aggiorna l'indice corrente della soluzione mostrata
+
+        int[][] sol = solutions.get(solIdx);        // Recupera la soluzione da visualizzare
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                controller.setGridValue(r, c, sol[r][c]);
+            }
+        }
+
+        gridPanel.repaint();
+
+        //  Aggiorno sempre abilitazione bottoni Previous/Next
+        prevBtn.setEnabled(solIdx > 0);                   // Abilita Previous solo se non sei sulla prima
+        nextBtn.setEnabled(solIdx < solutions.size() - 1); // Abilita Next solo se non sei sull'ultima
     }
 
     /** Metodo che gestisce il salvataggio della partita su file
