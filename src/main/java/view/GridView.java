@@ -19,8 +19,11 @@ public class GridView extends JFrame {
     private GameController controller;
     private KenKenGridPanel gridPanel;
     private int size;
+    private JLabel statusLabel; // Navigazione soluzioni
     private JButton prevBtn;
     private JButton nextBtn;
+    private JSpinner spinMax; // Per selezionare max soluzioni
+
 
     public GridView() {
         super("KenKen GUI con Pannello Laterale"); // Titolo della finestra
@@ -49,7 +52,7 @@ public class GridView extends JFrame {
         add(gridPanel, BorderLayout.CENTER); // Aggiunge la griglia al centro
         add(buildSidePanel(), BorderLayout.EAST); // Aggiunge il pannello laterale a destra
 
-        JLabel statusLabel = new JLabel("Griglia pronta");    // Etichetta che mostra lo stato
+        statusLabel = new JLabel("Griglia pronta");    // Etichetta che mostra lo stato
         add(statusLabel, BorderLayout.NORTH);                 // Aggiungila nella parte superiore della GUI
 
         controller.addObserver(new GridStatusObserver(controller, statusLabel, prevBtn, nextBtn, gridPanel));
@@ -82,6 +85,11 @@ public class GridView extends JFrame {
         p.add(Box.createVerticalStrut(10));
 
         /** Next e Previus*/
+
+        spinMax = new JSpinner(new SpinnerNumberModel(5, 1, 100, 1));
+        p.add(new JLabel("Max Solutions:"));
+        p.add(spinMax);
+
         prevBtn = new JButton("Previous");
         nextBtn = new JButton("Next");
         JPanel navPanel = new JPanel();
@@ -178,7 +186,8 @@ public class GridView extends JFrame {
 
     /** Inserisce la prima soluzione se esiste, altrimenti mostra un messaggio. */
     private void onSolve() {
-        solutions = controller.solvePuzzle(5);
+        int maxSol = (Integer) spinMax.getValue(); // prendo numero massimo soluzioni richieste
+        solutions = controller.solvePuzzle(maxSol); // Risolve la griglia
         if (solutions.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Nessuna soluzione trovata.");
             return;
@@ -210,6 +219,14 @@ public class GridView extends JFrame {
         }
 
         gridPanel.repaint();
+
+        // Aggiorno la statusLabel dopo aver mostrato una nuova soluzione
+        int totale = solutions.size();
+        statusLabel.setText(
+                "Soluzione " + (solIdx + 1) +
+                        " di " + totale +
+                        " (richieste: " + spinMax.getValue() + ")"
+        );
 
         //  Aggiorno sempre abilitazione bottoni Previous/Next
         prevBtn.setEnabled(solIdx > 0);                   // Abilita Previous solo se non sei sulla prima
