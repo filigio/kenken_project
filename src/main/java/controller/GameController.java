@@ -70,7 +70,7 @@ public class GameController {
     }
 
     /**SOLVE: */
-    public List<int[][]> solvePuzzle() {
+    public List<int[][]> solvePuzzle(int maxSol) { // Metodo per risolvere il puzzle restituendo più soluzioni (fino a maxSol)
         // 1. Verifica che ogni cella sia in un solo blocco
         String coverageError = checkFullCoverage();
         if (coverageError != null) {
@@ -92,9 +92,8 @@ public class GameController {
         Backtracking solver = new Backtracking(grid);
         int[][] sol = solver.solve();
 
-        return (sol == null)
-                ? Collections.emptyList()
-                : Collections.singletonList(sol);
+        return new Backtracking(grid).solve(maxSol); //Fa partire il processo di risoluzione della griglia usando il backtracking,
+                                                     //trovando fino a maxSol soluzioni, e restituendole tutte in una lista.
     }
 
     // Verifica che tutte le celle siano riempite (≠ 0)

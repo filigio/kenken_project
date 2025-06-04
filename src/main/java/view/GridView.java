@@ -10,13 +10,20 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 public class GridView extends JFrame {
-
+    private List<int[][]> solutions = new ArrayList<>();
+    private int solIdx = -1;
     private GameController controller;
     private KenKenGridPanel gridPanel;
     private int size;
+    private JLabel statusLabel; // Navigazione soluzioni
+    private JButton prevBtn;
+    private JButton nextBtn;
+    private JSpinner spinMax; // Per selezionare max soluzioni
+
 
     public GridView() {
         super("KenKen GUI con Pannello Laterale"); // Titolo della finestra
@@ -45,10 +52,10 @@ public class GridView extends JFrame {
         add(gridPanel, BorderLayout.CENTER); // Aggiunge la griglia al centro
         add(buildSidePanel(), BorderLayout.EAST); // Aggiunge il pannello laterale a destra
 
-        JLabel statusLabel = new JLabel("Griglia pronta");    // Etichetta che mostra lo stato
+        statusLabel = new JLabel("Griglia pronta");    // Etichetta che mostra lo stato
         add(statusLabel, BorderLayout.NORTH);                 // Aggiungila nella parte superiore della GUI
 
-        controller.addObserver(new GridStatusObserver(controller, statusLabel, gridPanel));
+        controller.addObserver(new GridStatusObserver(controller, statusLabel, prevBtn, nextBtn, gridPanel));
         pack(); // Dimensionamento automatico della finestra
         setLocationRelativeTo(null); // Centra la finestra sullo schermo
         setVisible(true); // Rende visibile la GUI
@@ -76,6 +83,24 @@ public class GridView extends JFrame {
         p.add(rbDef);
         p.add(rbIns);
         p.add(Box.createVerticalStrut(10));
+
+        /** Next e Previus*/
+
+        spinMax = new JSpinner(new SpinnerNumberModel(5, 1, 100, 1));
+        p.add(new JLabel("Max Solutions:"));
+        p.add(spinMax);
+
+        prevBtn = new JButton("Previous");
+        nextBtn = new JButton("Next");
+        JPanel navPanel = new JPanel();
+        navPanel.add(prevBtn);
+        navPanel.add(nextBtn);
+        p.add(navPanel);
+
+        prevBtn.addActionListener(e -> showSolution(solIdx - 1));
+        nextBtn.addActionListener(e -> showSolution(solIdx + 1));
+
+
 
         /** Aggiungi blocco*/
         JButton addBlock = new JButton("Aggiungi Blocco");
@@ -161,7 +186,8 @@ public class GridView extends JFrame {
 
     /** Inserisce la prima soluzione se esiste, altrimenti mostra un messaggio. */
     private void onSolve() {
-        var solutions = controller.solvePuzzle(); // Risolve la griglia
+        int maxSol = (Integer) spinMax.getValue(); // prendo numero massimo soluzioni richieste
+        solutions = controller.solvePuzzle(maxSol); // Risolve la griglia
         if (solutions.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Nessuna soluzione trovata.");
             return;
@@ -174,6 +200,37 @@ public class GridView extends JFrame {
                 controller.setGridValue(r, c, sol[r][c]); // Applica la soluzione
 
         gridPanel.repaint(); // Ridisegna con la soluzione
+        solIdx = 0;
+        showSolution(solIdx);
+    }
+
+
+    /** Metodo per visualizzare una soluzione specifica (in base all'indice)*/
+    private void showSolution(int idx) {
+        if (idx < 0 || idx >= solutions.size()) return;  // Evita errori se l'indice è fuori dai limiti della lista
+
+        solIdx = idx;           // Aggiorna l'indice corrente della soluzione mostrata
+
+        int[][] sol = solutions.get(solIdx);        // Recupera la soluzione da visualizzare
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                controller.setGridValue(r, c, sol[r][c]);
+            }
+        }
+
+        gridPanel.repaint();
+
+        // Aggiorno la statusLabel dopo aver mostrato una nuova soluzione
+        int totale = solutions.size();
+        statusLabel.setText(
+                "Soluzione " + (solIdx + 1) +
+                        " di " + totale +
+                        " (richieste: " + spinMax.getValue() + ")"
+        );
+
+        //  Aggiorno sempre abilitazione bottoni Previous/Next
+        prevBtn.setEnabled(solIdx > 0);                   // Abilita Previous solo se non sei sulla prima
+        nextBtn.setEnabled(solIdx < solutions.size() - 1); // Abilita Next solo se non sei sull'ultima
     }
 
     /** Metodo che gestisce il salvataggio della partita su file

@@ -12,7 +12,8 @@ public class Backtracking {
     private final int n; //dimensione griglia
     private final int[][] work; //matrice di lavro
     private final List<Cell> free;       // celle libere (in ordine riga-colonna) che verranno esplorate dal backtrcking
-
+    private final List<int[][]> solutions = new ArrayList<>();
+    private int maxToFind = 1;      // quante soluzioni cercare
     public Backtracking(Grid g) {
         this.grid = g;
         this.n =g.getSize();
@@ -25,18 +26,27 @@ public class Backtracking {
                 if (work[r][c] == 0)
                     free.add(new Cell(r, c));
     }
-    /**
-     * Trova la prima soluzione (per il momento trovaimo la rima soluzione, per vedere se funziona correttamente la calsse.
-     * Successivamente implemntiamo per avere più soluzioni possibili)
-     */
-    public int[][] solve() {
-        dfs(0);
-        return work;
+
+    /** Trova AL PIÙ maxSol soluzioni e le restituisce. */
+    public List<int[][]> solve(int maxSol) {
+        maxToFind = Math.max(1, maxSol);     // Imposta il numero massimo di soluzioni da trovare (almeno 1)
+        solutions.clear();                   // Svuota la lista di soluzioni precedenti
+        dfs(0);                                // avvia la ricerca
+        return new ArrayList<>(solutions);     // copia difensiva
     }
+
+    /** Trova la PRIMA soluzione; ritorna null se impossibile. */
+    public int[][] solve() {
+        List<int[][]> list = solve(1);
+        return list.isEmpty() ? null : list.get(0);
+    }
+
+
     /* ------------------------- ricorsione ------------------------- */
     private boolean dfs(int idx) {
         if (idx == free.size()) {            // griglia completa
-            return true;
+            solutions.add(copy(work)); // Aggiungi soluzione
+            return solutions.size() >= maxToFind;
         }
 
         Cell p = free.get(idx);
@@ -70,5 +80,14 @@ public class Backtracking {
 
         //se entrambi i vincoli sono rispettati
         return true; //puoi inserire v in p
+    }
+
+    /* copia profonda di una matrice n×n, per poter avere la soluzione da far vedere */
+    private static int[][] copy(int[][] src) {
+        int n = src.length;
+        int[][] dst = new int[n][n];// Crea una nuova matrice della stessa dimensione
+        for (int r = 0; r < n; r++)
+            System.arraycopy(src[r], 0, dst[r], 0, n);
+        return dst;
     }
 }
