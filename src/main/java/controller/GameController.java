@@ -5,6 +5,7 @@ import main.java.model.Cell;
 import main.java.model.Grid;
 import main.java.model.Block;
 import main.java.observer.GridObserver;
+import main.java.solver.SolverStrategy;
 
 import javax.swing.*;
 import java.io.*;
@@ -22,13 +23,14 @@ import java.util.List;
 public class GameController {
     private Grid grid;  // griglia del gioco
     private int size;   // dimensione della griglia (NxN)
-
+    private SolverStrategy solver;
     private final List<GridObserver> observers = new ArrayList<>(); // Lista di tutti gli observer registrati che vogliono essere notificati
 
     // Costruttore: inizializza la griglia di dimensione specificata
-    public GameController(int size) {
+    public GameController(int size, SolverStrategy solver) {
         this.grid = new Grid(size);
         this.size = size;
+        this.solver = solver;
     }
 
     // METODI PER GESTIRE OSSERVATORI
@@ -88,12 +90,7 @@ public class GameController {
                     : Collections.emptyList();
         }
 
-        // 3. Altrimenti usa il solver
-        Backtracking solver = new Backtracking(grid);
-        int[][] sol = solver.solve();
-
-        return new Backtracking(grid).solve(maxSol); //Fa partire il processo di risoluzione della griglia usando il backtracking,
-                                                     //trovando fino a maxSol soluzioni, e restituendole tutte in una lista.
+        return solver.solve(grid, maxSol); // usa la strategia
     }
 
     // Verifica che tutte le celle siano riempite (≠ 0)

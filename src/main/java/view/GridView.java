@@ -5,6 +5,7 @@ import main.java.factory.BlockFactoryManager;
 import main.java.model.Block;
 import main.java.model.Cell;
 import main.java.model.Grid;
+import main.java.solver.BacktrackingSolver;
 
 import javax.swing.*;
 import java.awt.*;
@@ -42,7 +43,7 @@ public class GridView extends JFrame {
         if (sel == null) System.exit(0); // Se annulla, chiude il programma
 
         this.size = sel; // Imposta la dimensione scelta
-        this.controller = new GameController(size); // Inizializza il controller con la dimensione
+        this.controller = new GameController(size,  new BacktrackingSolver()); // Inizializza il controller con la dimensione
 
         setDefaultCloseOperation(EXIT_ON_CLOSE); // Chiude il programma alla chiusura della finestra
         setLayout(new BorderLayout()); // Layout principale
@@ -270,7 +271,7 @@ public class GridView extends JFrame {
                 }
 
                 // Crea un nuovo controller con la griglia caricata
-                GameController newController = new GameController(newSize);
+                GameController newController = new GameController(newSize,  new BacktrackingSolver());
                 newController.getGrid().setValues(loadedGrid.getValuesCopy());
                 newController.getGrid().getBlocks().addAll(loadedGrid.getBlocks());
 
