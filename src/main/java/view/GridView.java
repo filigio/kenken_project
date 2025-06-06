@@ -11,7 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 
 public class GridView extends JFrame {
@@ -165,6 +165,23 @@ public class GridView extends JFrame {
             return;
         }
 
+        // Controllo che le celle non siano già in uso
+        if (!cellsAreAllFree(cells)) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Errore: alcune celle selezionate appartengono già ad un altro blocco!"
+            );
+            return;
+        }
+        // Controllo che formino un’unica area connessa
+        if (!cellsAreConnected(cells)) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Errore: le celle non formano un’area continua!"
+            );
+            return;
+        }
+
         // Chiede all’utente l’operatore e il target
         String op = JOptionPane.showInputDialog(this, "Operatore (+, -, *, /):");
         if (op == null) return;
@@ -303,6 +320,67 @@ public class GridView extends JFrame {
         repaint();    // Ridisegna visivamente la GUI
         pack();       // Ridimensiona la finestra alla nuova griglia
     }
+
+
+    // Metodi di validazione selezione blocchi
+    /**
+     * Verifica che tutte le celle selezionate non appartengano già a un altro blocco.
+     */
+    private boolean cellsAreAllFree(List<Cell> cells) {
+        // Scorro tutti i blocchi esistenti nella griglia
+        for (Block b : controller.getGrid().getBlocks()) {
+            //e per ciascun blocco controllo ogni sua cella
+            for (Cell c : b.getCells()) {
+                // Se la selezione contiene questa cella, c’è sovrapposizione
+                if (cells.contains(c)) {
+                    return false; // sovrapposizione trovata
+                }
+            }
+        }
+        return true; // tutte libere
+    }
+
+
+    /**
+     * Verifica che le celle selezionate formino un’area continua (adiacenti 4-direzioni).
+     */
+    /*
+    insieme di celle selezionate in una griglia forma un’unica “area” continua,
+    considerando l’adiacenza ortogonale (su, giù, sinistra, destra).
+     */
+    private boolean cellsAreConnected(List<Cell> list) {
+        if (list.size() <= 1) { //caso base
+            return true; // 0 o 1 elemento è sempre connesso
+        }
+        // Preparo un set di celle “da visitare”
+        Set<Cell> remaining = new HashSet<>(list);
+        Deque<Cell> queue = new ArrayDeque<>();
+        queue.add(list.get(0)); // prendiamo la prima cella e la inseriamo nella coda
+        remaining.remove(list.get(0)); //appena messe in coda le eliminiamo per non doverla risaminare
+
+        // Direzioni: su, giù, sinistra, destra
+        int[] dr = {-1, 1, 0, 0}, dc = {0, 0, -1, 1};
+
+        // Finché ho celle in coda
+        while (!queue.isEmpty()) {
+            Cell cur = queue.poll(); // estraggo la prossima cella da esplorare
+            // Controllo le quattro celle adiacenti
+            for (int k = 0; k < 4; k++) {
+                Cell next = new Cell(
+                        cur.getRow() + dr[k],
+                        cur.getCol() + dc[k]
+                );
+                // Se la cella adiacente è tra quelle da visitare
+                if (remaining.remove(next)) {
+                    queue.add(next); // la aggiungo alla coda
+                }
+            }
+        }
+
+        // Se alla fine non rimane nulla, tutte le celle erano connesse
+        return remaining.isEmpty();
+    }
+
     public static void main(String[] args) {
         SwingUtilities.invokeLater(GridView::new);
     }

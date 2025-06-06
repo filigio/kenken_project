@@ -180,16 +180,4 @@ public class GameController {
     }
 
 
-    // Metodo extra per sviluppo: stampa la griglia in console
-    public void printGridToConsole() {
-        int[][] values = grid.getValuesCopy();
-        System.out.println("Griglia attuale:");
-        for (int r = 0; r < size; r++) {
-            for (int c = 0; c < size; c++) {
-                System.out.print((values[r][c] == 0 ? "." : values[r][c]) + " ");
-            }
-            System.out.println();
-        }
-    }
-
 }
