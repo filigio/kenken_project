@@ -85,6 +85,18 @@ public class GridView extends JFrame {
         p.add(rbIns);
         p.add(Box.createVerticalStrut(10));
 
+
+        /** Controllo live */
+         JCheckBox liveCheck = new JCheckBox("Controllo vincoli live", true);  // checkbox per abilitare/disabilitare il controllo live
+         liveCheck.setFont( new Font("SansSerif", Font.BOLD, 14));
+         liveCheck.setOpaque(false);
+         liveCheck.setAlignmentX(Component.CENTER_ALIGNMENT);
+         gridPanel.setLiveCheckSupplier(liveCheck::isSelected);                  // passo al KenKenGridPanel un Supplier che legge lo stato della checkbox
+
+         p.add(Box.createVerticalStrut(10));
+         p.add(liveCheck);
+
+
         /** Next e Previus*/
 
         spinMax = new JSpinner(new SpinnerNumberModel(5, 1, 100, 1));

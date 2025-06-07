@@ -9,6 +9,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class KenKenGridPanel extends JPanel {
 
@@ -20,6 +21,13 @@ public class KenKenGridPanel extends JPanel {
 
     private final List<Cell> selectedCells = new ArrayList<>(); // Celle attualmente selezionate (per creare blocchi)
     private Mode currentMode = Mode.DEFINE_BLOCKS;              // Modalità corrente (default: definizione blocchi)
+
+
+    private Supplier<Boolean> liveCheckSupplier = () -> true;  // campo per abilitare/disabilitare il live-check
+
+    public void setLiveCheckSupplier(Supplier<Boolean> supplier) {
+        this.liveCheckSupplier = supplier;
+    }   // memorizzo il Supplier per usarlo al volo
 
     public KenKenGridPanel(GameController controller) {
         this.controller = controller;
@@ -54,11 +62,20 @@ public class KenKenGridPanel extends JPanel {
                     if (valStr != null) {
                         try {
                             int v = Integer.parseInt(valStr); // Converte il valore inserito
-                            if (v < 0 || v > size) {
+                            if (v < 0 || v > size)
                                 JOptionPane.showMessageDialog(KenKenGridPanel.this,
                                         "Valore non valido (0‥" + size + ")");
-                            } else {
                                 controller.setGridValue(row, col, v); // Imposta il valore nella griglia
+                            if (liveCheckSupplier.get()) {                                         // se la checkbox è selezionata
+                                String err = controller.validateCurrentGrid();                            // chiedo al controller di validare la griglia
+                                if (err != null) {
+                                    JOptionPane.showMessageDialog(  // mostro un warning se c’è un vincolo violato
+                                            KenKenGridPanel.this,
+                                            err,                      // messaggio di errore restituito dal controller
+                                            "Vincolo violato",
+                                            JOptionPane.WARNING_MESSAGE      // icona di warning
+                                    );
+                                }
                             }
                         } catch (NumberFormatException ex) {
                             JOptionPane.showMessageDialog(KenKenGridPanel.this,

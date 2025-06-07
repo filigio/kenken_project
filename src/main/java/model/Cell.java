@@ -24,4 +24,14 @@ public class Cell implements Serializable {
         Cell other = (Cell) obj;
         return this.row == other.row && this.col == other.col;
     }
+    @Override
+    public int hashCode() {
+        // Combinazione semplice
+        return row * 31 + col;
+    }
+
+    @Override
+    public String toString() {
+        return "(" + row + "," + col + ")";
+    }
 }
