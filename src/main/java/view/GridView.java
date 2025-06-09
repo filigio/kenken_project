@@ -8,6 +8,7 @@ import main.java.model.Grid;
 import main.java.solver.BacktrackingSolver;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
@@ -15,6 +16,28 @@ import java.util.*;
 import java.util.List;
 
 public class GridView extends JFrame {
+
+    // ====== COSTANTI UI ======
+    private static final Color COLOR_BORDER_GRAY   = new Color(180, 180, 180);   // Bordo del pannello operazioni
+    private static final Color COLOR_SAVE_BUTTON   = new Color(200, 200, 200);   // Colore bottoni SAVE/LOAD
+
+
+    private static final Font BUTTON_FONT       = new Font("SansSerif", Font.BOLD, 24);  // font per pulsanti principali
+    private static final Font STATUS_FONT       = new Font("SansSerif", Font.BOLD, 18);  // font per etichetta di stato
+    private static final Font FONT_LABEL_SMALL  = new Font("SansSerif", Font.BOLD, 14);  // Label MaxSoluzioni
+    private static final Font FONT_LABEL_NORMAL = new Font("SansSerif", Font.PLAIN, 14); // Radio buttons
+    private static final Font FONT_ARROW        = new Font("SansSerif", Font.BOLD, 60);  // Frecce Next/Prev
+    private static final Font FONT_SAVELOAD     = new Font("SansSerif", Font.BOLD, 16);  // Save/Load button
+
+
+    private static final Dimension DIM_BUTTON_WIDE   = new Dimension(250, 35);   // Solve, Change size, Blocchi
+    private static final Dimension DIM_BUTTON_SMALL  = new Dimension(120, 35);   // Reset (Values)
+    private static final Dimension DIM_BUTTON_COMPACT= new Dimension(120, 40);   // Save / Load
+    private static final Dimension DIM_SPINNER       = new Dimension(70, 35);    // Spinner numerico
+    private static final Dimension DIM_ARROW_BUTTON  = new Dimension(90, 100);   // Frecce → ←
+
+    // =========================
+
     private List<int[][]> solutions = new ArrayList<>();
     private int solIdx = -1;
     private GameController controller;
@@ -65,19 +88,31 @@ public class GridView extends JFrame {
     /* ======================= pannello laterale ====================== */
 
     private JPanel buildSidePanel() {
+        // ====================Creazione del pannello verticale====================
         JPanel p = new JPanel();
         p.setLayout(new BoxLayout(p, BoxLayout.Y_AXIS));
-        p.setBorder(BorderFactory.createTitledBorder("Operazioni"));
 
-        /* modalità */
+        // ===============Bordo del pannello intitolato “OPERAZIONI”==============
+        TitledBorder tb = BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(COLOR_BORDER_GRAY, 1),
+                "OPERAZIONI");
+        tb.setTitleJustification(TitledBorder.CENTER);
+        tb.setTitleFont(STATUS_FONT);
+        p.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createEmptyBorder(15, 15, 15, 15),
+                tb
+        ));
+
+        /** modalità */
         // Permette di cambiare modalità
-        JRadioButton rbDef = new JRadioButton("Definisci blocchi", true);
-        JRadioButton rbIns = new JRadioButton("Inserisci numeri");
+        JRadioButton rbDef = createButton("Definisci blocchi");
+        JRadioButton rbIns = createButton("Inserisci numeri");
 
         ButtonGroup group = new ButtonGroup(); // Raggruppa i radio button
         group.add(rbDef);
         group.add(rbIns);
         // Gestione cambio modalità
+        rbDef.setSelected(true);//impostato già a True
         rbDef.addActionListener(e -> gridPanel.setMode(KenKenGridPanel.Mode.DEFINE_BLOCKS));
         rbIns.addActionListener(e -> gridPanel.setMode(KenKenGridPanel.Mode.INSERT_NUMBERS));
 
@@ -88,83 +123,171 @@ public class GridView extends JFrame {
 
         /** Controllo live */
          JCheckBox liveCheck = new JCheckBox("Controllo vincoli live", true);  // checkbox per abilitare/disabilitare il controllo live
-         liveCheck.setFont( new Font("SansSerif", Font.BOLD, 14));
+         liveCheck.setFont(FONT_LABEL_SMALL);
          liveCheck.setOpaque(false);
          liveCheck.setAlignmentX(Component.CENTER_ALIGNMENT);
          gridPanel.setLiveCheckSupplier(liveCheck::isSelected);                  // passo al KenKenGridPanel un Supplier che legge lo stato della checkbox
-
-         p.add(Box.createVerticalStrut(10));
          p.add(liveCheck);
 
+         p.add(Box.createVerticalStrut(20));
+
+
+        /** Max Solution */
+        JPanel spinPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0)); //  Layout centrato perfetto
+        spinPanel.setOpaque(false);
+
+        //  Creazione della label "Max Solutions" ingrandita
+        JLabel spinLabel = new JLabel("Max Solutions:");
+        spinLabel.setFont(FONT_LABEL_SMALL); // Font aumentato a 16pt, in grassetto
+        spinMax = new JSpinner(new SpinnerNumberModel(5, 1, 100, 1));
+        spinMax.setPreferredSize(DIM_SPINNER);
+        //  Ingrandisci anche il numero dentro lo spinner
+        JComponent editor = spinMax.getEditor();
+        JFormattedTextField textField = ((JSpinner.DefaultEditor) editor).getTextField();
+        textField.setFont(STATUS_FONT); // Numeri grandi e bold
+        textField.setHorizontalAlignment(JTextField.CENTER);    // Numeri centrati dentro il campo
+
+        spinPanel.add(spinLabel);
+        spinPanel.add(spinMax);
+        p.add(spinPanel);
+
+        p.add(Box.createVerticalStrut(20));
+
+
+        /** Solve */
+        p.add(createLargeButton("SOLVE", e -> onSolve()));
+        p.add(Box.createVerticalStrut(10));
 
         /** Next e Previus*/
-
-        spinMax = new JSpinner(new SpinnerNumberModel(5, 1, 100, 1));
-        p.add(new JLabel("Max Solutions:"));
-        p.add(spinMax);
-
-        prevBtn = new JButton("Previous");
-        nextBtn = new JButton("Next");
-        JPanel navPanel = new JPanel();
+        JPanel navPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        prevBtn = createNavigationButton("←", e -> showSolution(solIdx - 1));
+        nextBtn = createNavigationButton("→", e -> showSolution(solIdx + 1));
+        prevBtn.setEnabled(false); //per disattivare il pulsante
+        nextBtn.setEnabled(false);
         navPanel.add(prevBtn);
         navPanel.add(nextBtn);
         p.add(navPanel);
 
-        prevBtn.addActionListener(e -> showSolution(solIdx - 1));
-        nextBtn.addActionListener(e -> showSolution(solIdx + 1));
-
-
+        p.add(Box.createVerticalStrut(20));
 
         /** Aggiungi blocco*/
-        JButton addBlock = new JButton("Aggiungi Blocco");
-        addBlock.addActionListener(e -> onAddBlock());
-        p.add(addBlock);
+        p.add(createLargeButton("AGGIUNGI BLOCCO", e -> onAddBlock()));
         p.add(Box.createVerticalStrut(10));
-        /** solve → inserisce sempre la prima soluzione */
-        JButton solve = new JButton("Solve");
-        solve.addActionListener(e -> onSolve());
-        p.add(solve);p.add(Box.createVerticalStrut(10));
 
         /** Reset*/
         // Pulsante per resettare solo i valori (senza rimuovere blocchi)
-        JButton resetVals = new JButton("Reset (solo valori)");
-        resetVals.addActionListener(e -> {
+        JPanel resetPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        resetPanel.setOpaque(false);
+        JButton resetVals = createSmallButton("Reset (values)", e -> {
             controller.resetGrid();      // Azzera solo i valori numerici
             gridPanel.repaint();         // Ridisegna la griglia aggiornata
         });
-        p.add(resetVals); // Aggiunge il pulsante al pannello
-        p.add(Box.createVerticalStrut(10)); // Spazio verticale
-
         // Pulsante per resettare tutto (valori + blocchi)
-        JButton resetAll = new JButton("Reset Tutto");
-        resetAll.addActionListener(e -> {
+        JButton resetAll = createSmallButton("Reset All", e -> {
             controller.resetGrid();                          // Azzera i valori
             controller.getGrid().getBlocks().clear();        // Rimuove tutti i blocchi
             gridPanel.repaint();                             // Aggiorna visivamente
         });
-        p.add(resetAll);
-        p.add(Box.createVerticalStrut(10));
+        resetPanel.add(resetVals); // Aggiunge il pulsante al pannello
+        resetPanel.add(resetAll);
+        p.add(resetPanel);
+
+        p.add(Box.createVerticalStrut(20));
 
         /** Change Size*/
         // Pulsante per cambiare la dimensione della griglia
-        JButton changeSize = new JButton("Cambia dimensione");
-        changeSize.addActionListener(e -> {// Azione associata al clic sul pulsante
+        p.add(createLargeButton("CHANGE SIZE", e ->{
             dispose();      // Chiude la finestra attuale (rimuove tutto)
             new GridView(); // Crea una nuova GUI KenKen, partendo da zero (chiede nuova dimensione)
-        });
-        p.add(changeSize);
-        p.add(Box.createVerticalStrut(10));
+        } ));
+
+        p.add(Box.createVerticalStrut(20));
 
 
         /** Save e Load*/
-        JButton save = new JButton("Save");
-        save.addActionListener(e -> onSave());
-        JButton load = new JButton("Load");
-        load.addActionListener(e -> onLoad());
-        p.add(save); p.add(Box.createVerticalStrut(10));
-        p.add(load);
+        JPanel SaveLoadPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        SaveLoadPanel.setOpaque(false);
+        JButton save = createSaveLoadButton("Save", e -> onSave());
+        JButton load = createSaveLoadButton("Load", e -> onLoad());
+
+        SaveLoadPanel.add(save);
+        SaveLoadPanel.add(load);
+        p.add(SaveLoadPanel);
+        p.add(Box.createVerticalStrut(10));
+
         return p;
     }
+
+    //============Metodi di appoggio per la creazione dei vari Bottoni===============
+    // RadioButton
+    private JRadioButton createButton(String text) {
+        JRadioButton rb = new JRadioButton(text);
+        rb.setFont(FONT_LABEL_NORMAL);
+        rb.setFocusPainted(false);
+        rb.setOpaque(false);
+        rb.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return rb;
+    }
+
+    // Bottoni grandi
+    private JButton createLargeButton(String text, java.awt.event.ActionListener action) {
+        JButton b = new JButton(text);
+        b.setFont(BUTTON_FONT);
+        b.setBackground(Color.WHITE);
+        b.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        b.setFocusPainted(false);
+        b.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // larghezza e altezza identici per tutti
+        b.setPreferredSize(DIM_BUTTON_WIDE);
+        b.setMaximumSize(DIM_BUTTON_WIDE); // Fix per BoxLayout (stessa larghezza sempre)
+
+        b.addActionListener(action);
+        return b;
+    }
+
+
+    // Bottoni freccia grandi e solo freccia cliccabile
+    private JButton createNavigationButton(String arrow, java.awt.event.ActionListener action) {
+        JButton b = new JButton(arrow);
+        b.setFont(FONT_ARROW); //font
+        b.setFocusPainted(false);
+        b.setContentAreaFilled(false); // Nessun riempimento rettangolare in modo da non vedere il bottone
+        b.setBorderPainted(false);     // bordo del bottone non visibile
+        b.setOpaque(false);
+        b.setPreferredSize(DIM_ARROW_BUTTON); //spazio
+        b.addActionListener(action);
+        return b;
+    }
+
+    // Bottoni normali piccoli
+    private JButton createSmallButton(String text, java.awt.event.ActionListener action) {
+        JButton b = new JButton(text);
+        b.setFont(FONT_LABEL_SMALL);
+        b.setBackground(Color.WHITE);
+        b.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        b.setFocusPainted(false);
+        b.setPreferredSize(DIM_BUTTON_SMALL);
+        b.addActionListener(action);
+        return b;
+    }
+
+    // Bottoni rettangolari senza bordo (per SAVE/LOAD)
+    private JButton createSaveLoadButton(String text, java.awt.event.ActionListener action) {
+        JButton b = new JButton(text);
+        b.setFont(FONT_SAVELOAD);
+        b.setBackground(COLOR_SAVE_BUTTON); // Sfondo leggerissimo grigio chiaro
+        b.setForeground(Color.BLACK);              // Testo nero
+        b.setFocusPainted(true);                   // Nessuna evidenziazione clic
+        b.setContentAreaFilled(false);                // Riempi sfondo normalmente
+        b.setOpaque(true);                          // Sfondo opaco
+        b.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1)); // Bordino nero sottilissimo
+        b.setPreferredSize(DIM_BUTTON_COMPACT); // Dimensione più compatta
+        b.addActionListener(action);
+
+        return b;
+    }
+
 
     /**
      * Metodo chiamato quando l'utente clicca su "Aggiungi Blocco".
