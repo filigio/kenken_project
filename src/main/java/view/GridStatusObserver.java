@@ -51,4 +51,8 @@ public class GridStatusObserver implements GridObserver {
         this.solutions = sols;
         this.currentSolIdx = 0;
     }
+    public void clearSolutions() {
+        this.solutions = List.of();
+        this.currentSolIdx = -1;
+    }
 }

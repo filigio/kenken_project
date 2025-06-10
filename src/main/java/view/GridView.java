@@ -20,6 +20,9 @@ public class GridView extends JFrame {
     // ====== COSTANTI UI ======
     private static final Color COLOR_BORDER_GRAY   = new Color(180, 180, 180);   // Bordo del pannello operazioni
     private static final Color COLOR_SAVE_BUTTON   = new Color(200, 200, 200);   // Colore bottoni SAVE/LOAD
+    private static final Color BUTTON_COLOR     = new Color(40, 155, 255);  // colore principale dei bottoni iniziali
+    private static final Color BACKGROUND_COLOR = new Color(200, 220, 255); // sfondo finestra iniziale e pannelli
+    private static final Color COLOR_SECONDARY_BUTTON  = new Color(70, 130, 180);
 
 
     private static final Font BUTTON_FONT       = new Font("SansSerif", Font.BOLD, 24);  // font per pulsanti principali
@@ -28,13 +31,18 @@ public class GridView extends JFrame {
     private static final Font FONT_LABEL_NORMAL = new Font("SansSerif", Font.PLAIN, 14); // Radio buttons
     private static final Font FONT_ARROW        = new Font("SansSerif", Font.BOLD, 60);  // Frecce Next/Prev
     private static final Font FONT_SAVELOAD     = new Font("SansSerif", Font.BOLD, 16);  // Save/Load button
+    private static final Font FONT_WELCOME      = new Font("SansSerif", Font.PLAIN, 30); // “Benvenuto in...”
+    private static final Font TITLE_FONT        = new Font("SansSerif", Font.BOLD, 60);  // font per il titolo "KenKen"
 
 
+    private static final Dimension DIM_BUTTON_LARGE  = new Dimension(250, 80);   // Nuova partita / Carica
     private static final Dimension DIM_BUTTON_WIDE   = new Dimension(250, 35);   // Solve, Change size, Blocchi
     private static final Dimension DIM_BUTTON_SMALL  = new Dimension(120, 35);   // Reset (Values)
     private static final Dimension DIM_BUTTON_COMPACT= new Dimension(120, 40);   // Save / Load
     private static final Dimension DIM_SPINNER       = new Dimension(70, 35);    // Spinner numerico
     private static final Dimension DIM_ARROW_BUTTON  = new Dimension(90, 100);   // Frecce → ←
+    private static final Dimension DIM_GRID_SIZE_BTN = new Dimension(150, 70);   // Bottoni 4x4, 5x5, 6x6, 7x7
+
 
     // =========================
 
@@ -47,46 +55,266 @@ public class GridView extends JFrame {
     private JButton prevBtn;
     private JButton nextBtn;
     private JSpinner spinMax; // Per selezionare max soluzioni
-
+    private JPanel gridContainer; // Contenitore della griglia
+    private GridStatusObserver observer; // nuovobserver aggiunto
 
     public GridView() {
-        super("KenKen GUI con Pannello Laterale"); // Titolo della finestra
-
-        // Selezione della dimensione iniziale della griglia tramite dialogo
-        Integer[] dims = {3, 4, 5, 6};
-        Integer sel = (Integer) JOptionPane.showInputDialog(
-                this,
-                "Scegli la dimensione della griglia:",
-                "Dimensione",
-                JOptionPane.PLAIN_MESSAGE,
-                null,
-                dims,
-                3); // valore predefinito
-
-        if (sel == null) System.exit(0); // Se annulla, chiude il programma
-
-        this.size = sel; // Imposta la dimensione scelta
-        this.controller = new GameController(size,  new BacktrackingSolver()); // Inizializza il controller con la dimensione
+        super("KenKen Solve"); // Titolo della finestra
 
         setDefaultCloseOperation(EXIT_ON_CLOSE); // Chiude il programma alla chiusura della finestra
+
+        /** === scelta iniziale Nuova / Carica ========================= */
+        Grid initialGrid = firstDialogNewOrLoad();
+        if (initialGrid == null) {          // utente vuole una nuova griglia
+            Integer sel = askGridSize("Scegli la dimensione della griglia:");
+            if (sel == null) System.exit(0); //Se ha chiuso senza scegliere, esce
+            size       = sel;
+            controller = new GameController(size, new BacktrackingSolver()); // Crea nuova partita con grandezza size
+        } else {                            // caricata da file
+            size       = initialGrid.getSize();
+            controller = new GameController(size, new BacktrackingSolver()); // Crea il controller con stessa dimensione
+            controller.getGrid().setValues(initialGrid.getValuesCopy());  //Copia i valori
+            controller.getGrid().getBlocks().addAll(initialGrid.getBlocks()); //Copia i blocchi
+        }
+
         setLayout(new BorderLayout()); // Layout principale
+
+        //  statusLabel in alto inizzialmente vuoto
+        statusLabel = new JLabel(" ");
+        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        statusLabel.setFont(STATUS_FONT);
+        add(statusLabel, BorderLayout.NORTH);
 
         gridPanel = new KenKenGridPanel(controller); // Inizializza il pannello della griglia
 
-        add(gridPanel, BorderLayout.CENTER); // Aggiunge la griglia al centro
+        // Creo contenitore della griglia
+        gridContainer = new JPanel(new GridBagLayout());
+        gridContainer.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        gridContainer.add(gridPanel);
+
+        add(gridContainer, BorderLayout.CENTER); // Aggiunge la griglia al centro
         add(buildSidePanel(), BorderLayout.EAST); // Aggiunge il pannello laterale a destra
 
         statusLabel = new JLabel("Griglia pronta");    // Etichetta che mostra lo stato
         add(statusLabel, BorderLayout.NORTH);                 // Aggiungila nella parte superiore della GUI
 
-        controller.addObserver(new GridStatusObserver(controller, statusLabel, prevBtn, nextBtn, gridPanel));
+        observer = new GridStatusObserver(controller, statusLabel, prevBtn, nextBtn, gridPanel);
+        controller.addObserver(observer);
         pack(); // Dimensionamento automatico della finestra
         setLocationRelativeTo(null); // Centra la finestra sullo schermo
         setVisible(true); // Rende visibile la GUI
     }
 
-    /* ======================= pannello laterale ====================== */
+    /** ======================= finestra inizialer Nuova/Carica ====================== */
 
+    private Grid firstDialogNewOrLoad() {
+
+        /** Bottoni */
+        JButton btnNewGrid = new JButton("+ CREA PARTITA");
+        btnNewGrid.setFont(BUTTON_FONT);
+        btnNewGrid.setBackground(BUTTON_COLOR);
+        btnNewGrid.setForeground(Color.BLACK); // Testo
+        btnNewGrid.setFocusPainted(false);
+        btnNewGrid.setFocusable(false); //  Disattiva focus iniziale
+        btnNewGrid.setPreferredSize(DIM_BUTTON_LARGE);
+
+        JButton btnLoadGrid = new JButton("CARICA PARTITA");
+        btnLoadGrid.setFont(BUTTON_FONT);
+        btnLoadGrid.setBackground(BUTTON_COLOR);
+        btnLoadGrid.setForeground(Color.BLACK); // Testo
+        btnLoadGrid.setFocusPainted(false);
+        btnLoadGrid.setFocusable(false); // Disattiva focus iniziale
+        btnLoadGrid.setPreferredSize(DIM_BUTTON_LARGE);
+
+
+        // Primo titolo piccolo "Benvenuto in..."
+        JLabel welcomeLabel = new JLabel("Benvenuto in...");
+        welcomeLabel.setFont(FONT_WELCOME); // Font più piccolo
+        welcomeLabel.setHorizontalAlignment(SwingConstants.CENTER);      // Centra il testo orizzontalmente
+        welcomeLabel.setAlignmentX(Component.CENTER_ALIGNMENT);          // Centra anche rispetto all'asse X
+        // Titolo
+        JLabel titleLabel = new JLabel("KenKen");
+        titleLabel.setFont(TITLE_FONT);
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        // Pannello principale
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBackground(BACKGROUND_COLOR);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(50, 30, 30, 30));
+
+
+        mainPanel.add(welcomeLabel);
+        mainPanel.add(Box.createVerticalStrut(30));
+        mainPanel.add(titleLabel);
+        mainPanel.add(Box.createVerticalStrut(100)); // Spazio bello ampio dopo KenKen
+
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 50, 0));
+        buttonsPanel.setBackground(BACKGROUND_COLOR);
+        buttonsPanel.add(btnNewGrid);
+        buttonsPanel.add(btnLoadGrid);
+
+        mainPanel.add(buttonsPanel);
+        mainPanel.add(Box.createVerticalGlue());
+
+        // Crea il JDialog
+        JDialog dialog = new JDialog(this, "KenKen", true); // TRUE = bloccante
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);  // Chiude solo la finestra, non l'intera app
+        dialog.getContentPane().add(mainPanel);
+        dialog.setSize(700, 500);
+        dialog.setResizable(false);
+        dialog.setLocationRelativeTo(this);
+
+        final Grid[] gridResult = new Grid[1];
+        final boolean[] buttonClicked = {false}; // Aggiunto flag per verifiacre che il bottone è stato premuto
+
+        btnNewGrid.addActionListener(e -> {                               // Listener per bottone "Nuova"
+            gridResult[0] = null;
+            buttonClicked[0] = true; //Segno che ha premuto
+            dialog.dispose();
+        });
+
+        btnLoadGrid.addActionListener(e -> {       // Listener per bottone "Carica"
+            JFileChooser fc = new JFileChooser();        // Crea selettore file
+            if (fc.showOpenDialog(dialog) == JFileChooser.APPROVE_OPTION) { // Se l'utente conferma la selezione
+                try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fc.getSelectedFile()))) {
+                    gridResult[0] = (Grid) ois.readObject();   // Tenta di leggere l'oggetto Grid dal file
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(dialog, "Errore caricamento: " + ex.getMessage());
+                    System.exit(1);               // Esce dal programma in caso di errore
+                }
+            }
+            buttonClicked[0] = true;             // Segna che è stato premuto
+            dialog.dispose();                 // Chiude la finestra
+        });
+
+        dialog.setVisible(true);
+
+        // Quando la finestra viene chiusa
+        if (!buttonClicked[0]) { // Se NON ha premuto nessun bottone
+            System.exit(0); // Esco subito
+        }
+
+        return gridResult[0];
+    }
+
+
+    /** Mostra un dialogo per far scegliere all'utente la dimensione della griglia */
+
+    private Integer askGridSize(String message) {
+
+        //  Elenco dimensioni disponibili
+        Integer[] sizes = {3, 4, 5, 6}; // Se vuoi aggiungere 7, basta scrivere {3,4,5,6,7} Utilizzando un ciclo per creare i bottoni in modo dinamico
+
+        // Titolo
+        JLabel titleLabel = new JLabel("Seleziona la Dimensione della Griglia");
+        titleLabel.setFont(BUTTON_FONT);
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);  // Allineamento orizzontale centrato
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);    // Allineamento all’interno del BoxLayout
+
+        // Pannello bottoni dinamici
+        JPanel buttonsPanel = new JPanel(new GridLayout(0, 2, 20, 20)); // 2 colonne flessibili
+        buttonsPanel.setBackground(BACKGROUND_COLOR);
+
+        final Integer[] selectedSize = {null};   // Variabile per salvare la scelta dell’utent
+
+        for (Integer size : sizes) {   // Per ogni dimensione disponibile
+            JButton btn = createGridSizeButton(size + " x " + size, size, COLOR_SECONDARY_BUTTON ); // Crea bottone
+            btn.addActionListener(e -> {   // Listener per il click sul bottone
+                selectedSize[0] = size;    // Salva la dimensione selezionata
+                SwingUtilities.getWindowAncestor(btn).dispose(); // Chiude il dialog
+            });
+            buttonsPanel.add(btn);   // Aggiunge il bottone al pannello
+        }
+
+        // Pannello principale
+        JPanel mainPanel = new JPanel();   // Crea contenitore principale
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        mainPanel.setBackground(BACKGROUND_COLOR);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
+
+        mainPanel.add(titleLabel);
+        mainPanel.add(Box.createVerticalStrut(30));
+        mainPanel.add(buttonsPanel);
+
+        JDialog dialog = new JDialog(this, "Scegli Dimensione", true);
+        dialog.getContentPane().add(mainPanel);
+        dialog.setSize(700, 500);
+        dialog.setResizable(false);
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+
+        if (selectedSize[0] == null) {
+            System.exit(0); // Se chiude senza scegliere, esci
+        }
+
+        return selectedSize[0];
+    }
+
+    // Metodo di supporto per creare i bottoni
+    private JButton createGridSizeButton(String text, int size, Color color) {
+        JButton btn = new JButton(text);
+        btn.setFont(BUTTON_FONT);
+        btn.setBackground(color);
+        btn.setForeground(Color.BLACK);
+        btn.setFocusPainted(false);
+        btn.setFocusable(false);    //pre-focus
+        btn.setPreferredSize(DIM_GRID_SIZE_BTN);
+        return btn;
+    }
+
+    /**
+     * Mostra un dialogo per scegliere una nuova dimensione della griglia.
+     * Se confermata, ricrea il controller e aggiorna l’interfaccia con la nuova dimensione.
+     */
+    private void onChangeSize() {
+        Integer newSize = askGridSize("Nuova dimensione della griglia:");
+        if (newSize == null || newSize.equals(size)) return;
+
+        size = newSize;
+        controller = new GameController(size, new BacktrackingSolver());
+        clearSolutions();
+
+        remove(gridContainer); //  Rimuovo tutto il contenitore vecchio
+
+        gridPanel = new KenKenGridPanel(controller);
+
+        // Creo nuovo contenitore aggiornato
+        gridContainer = new JPanel(new GridBagLayout());
+        gridContainer.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+
+        gridContainer.add(gridPanel);
+
+        add(gridContainer, BorderLayout.CENTER); // ➡️ Aggiungo di nuovo il contenitore completo
+
+
+        revalidate();
+        pack();
+        setLocationRelativeTo(null);
+    }
+
+    /**
+     * Cancella tutte le soluzioni trovate, azzera l'indice e aggiorna l'interfaccia disabilitando i controlli.
+     */
+    private void clearSolutions() {
+        solutions = Collections.emptyList();   // Svuota lista soluzioni
+        solIdx = -1;                            // Reset indice soluzione
+        prevBtn.setEnabled(false);              // Disabilita Previous
+        nextBtn.setEnabled(false);              // Disabilita Next
+        statusLabel.setText(" ");               // Svuota statusLabel
+
+        // Controlla che observer esista prima di notificare // per non avitare eccezioni se l'observer non esiste
+        if (observer != null) {
+            observer.clearSolutions();          // notifica solo se observer non è null
+        }
+    }
+
+
+
+    /** ======================= pannello laterale ====================== */
     private JPanel buildSidePanel() {
         // ====================Creazione del pannello verticale====================
         JPanel p = new JPanel();
@@ -196,10 +424,7 @@ public class GridView extends JFrame {
 
         /** Change Size*/
         // Pulsante per cambiare la dimensione della griglia
-        p.add(createLargeButton("CHANGE SIZE", e ->{
-            dispose();      // Chiude la finestra attuale (rimuove tutto)
-            new GridView(); // Crea una nuova GUI KenKen, partendo da zero (chiede nuova dimensione)
-        } ));
+        p.add(createLargeButton("CHANGE SIZE", e ->onChangeSize()));
 
         p.add(Box.createVerticalStrut(20));
 
@@ -340,9 +565,35 @@ public class GridView extends JFrame {
     /** Inserisce la prima soluzione se esiste, altrimenti mostra un messaggio. */
     private void onSolve() {
         int maxSol = (Integer) spinMax.getValue(); // prendo numero massimo soluzioni richieste
+
+        if (maxSol < 0) {
+            JOptionPane.showMessageDialog(this, "Inserire un numero ≥ 0!");
+            return;
+        }
+
+        if (controller.isGridComplete()) { // se la griglia è già compeltamtne riempita
+            String err = controller.validateCurrentGrid(); // verifico rispetti tutti i vincoli
+            JOptionPane.showMessageDialog(this,
+                    (err == null) ? "La griglia è completa e CORRETTA!"
+                            : "La griglia è completa ma NON corretta:\n" + err);
+            return; // esco perchè non serve cercare soluzioni
+        }
+
+        int ans = JOptionPane.showConfirmDialog( // chiedo conferma all'utente prima di lanciare il solver
+                this,
+                "La griglia non è completa.\nVuoi cercare " +
+                        (maxSol == 0 ? "tutte le possibili" : "fino a " + maxSol) + " soluzioni?",
+                "Trova soluzione?",
+                JOptionPane.YES_NO_OPTION);
+
+        if (ans != JOptionPane.YES_OPTION) return;
+
         solutions = controller.solvePuzzle(maxSol); // Risolve la griglia
-        if (solutions.isEmpty()) {
+        observer.setSolutions(solutions); // Comunica all'observer quante soluzioni abbiamo
+
+        if (solutions.isEmpty()) {// Se non ci sono soluzioni, avviso l’utente e pulisco lo stato
             JOptionPane.showMessageDialog(this, "Nessuna soluzione trovata.");
+            clearSolutions(); // per riposrtare il pannello di stato allo stato iniziale
             return;
         }
 
@@ -352,9 +603,12 @@ public class GridView extends JFrame {
             for (int c = 0; c < size; c++)
                 controller.setGridValue(r, c, sol[r][c]); // Applica la soluzione
 
-        gridPanel.repaint(); // Ridisegna con la soluzione
+        // se trovo almeno una soluzione mostro la prima
         solIdx = 0;
         showSolution(solIdx);
+
+        JOptionPane.showMessageDialog(this, //informo l'utente delle soluzioni trovate
+                "Trovate " + solutions.size() + " soluzioni (massimo richiesto: " + maxSol + ").");
     }
 
 
@@ -400,60 +654,63 @@ public class GridView extends JFrame {
             }
         }
     }
-
-    private void onLoad() {
-        JFileChooser fc = new JFileChooser();// Crea selettore file
-        if (fc.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            try {
-                // Carica la griglia da file
-                ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fc.getSelectedFile()));
-                Grid loadedGrid = (Grid) ois.readObject(); //prendendo un oggetto Grid salvato precedentemente su file
-
-                // Recupera la dimensione della griglia caricata
-                int newSize = loadedGrid.getSize();
-
-                // Chiedi conferma se la dimensione è diversa da quella attuale
-                if (newSize != size) {
-                    int ans = JOptionPane.showConfirmDialog(this,
-                            "La griglia salvata è di dimensione " + newSize + "x" + newSize +
-                                    ". Vuoi caricarla comunque?",
-                            "Cambio dimensione",
-                            JOptionPane.YES_NO_OPTION);
-                    if (ans != JOptionPane.YES_OPTION) return;
-                }
-
-                // Crea un nuovo controller con la griglia caricata
-                GameController newController = new GameController(newSize,  new BacktrackingSolver());
-                newController.getGrid().setValues(loadedGrid.getValuesCopy());
-                newController.getGrid().getBlocks().addAll(loadedGrid.getBlocks());
-
-                // Ricostruisci dinamicamente la GUI
-                reloadFromController(newController);
-                JOptionPane.showMessageDialog(this, "Partita caricata con successo!");
-            } catch (Exception ex) {
-                // Mostra errore se qualcosa va storto
-                JOptionPane.showMessageDialog(this, "Errore durante il caricamento: " + ex.getMessage());
-            }
-        }
-    }
     /**
-     * Ricrea dinamicamente controller e griglia dopo il caricamento.
+     * Apre una finestra per caricare una griglia salvata da file.
+     * Se il file è valido, ricostruisce l'interfaccia e il controller con la griglia caricata.
      */
+    private void onLoad() {
+        JFileChooser fc = new JFileChooser();// Apro un file chooser per far selezionare all’utente il file da caricare
+        if (fc.showOpenDialog(this) != JFileChooser.APPROVE_OPTION) return; // Se l’utente non conferma l’apertura, esco subito dal metodo
 
-    private void reloadFromController(GameController newController) {
-        this.controller = newController; //  Sostituisce il vecchio GameController con quello caricato da file
-        this.size = newController.getGrid().getSize(); //Aggiorna la dimensione interna (size) in base alla griglia appena caricata
-
-        if (gridPanel != null) {
-            remove(gridPanel); // Rimuove il vecchio pannello griglia
+        Grid loaded;
+        // Provo a leggere l’oggetto Grid salvato su file, chiudendo automaticamente lo stream
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fc.getSelectedFile()))) {
+            loaded = (Grid) ois.readObject(); // Deserializzo la griglia
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Errore caricamento: " + ex.getMessage());
+            return;
         }
 
-        this.gridPanel = new KenKenGridPanel(controller); // Crea nuova griglia
-        add(gridPanel, BorderLayout.CENTER);              // Aggiunge la nuova griglia
+        // Prelevo la dimensione della griglia caricata
+        int newSize = loaded.getSize();
+        if (newSize != size) { // Se la size è diversa da quella corrente, chiedo conferma
+            int ans = JOptionPane.showConfirmDialog(this,
+                    "Il file è " + newSize + "×" + newSize + ". Sostituire la griglia corrente?",
+                    "Dimensione diversa", JOptionPane.YES_NO_OPTION);
+            if (ans != JOptionPane.YES_OPTION) return; //se l'utente dice no, esco
+        }
 
-        revalidate(); // Aggiorna il layout della finestra
-        repaint();    // Ridisegna visivamente la GUI
-        pack();       // Ridimensiona la finestra alla nuova griglia
+        // Ricreo un nuovo controller con la size (resettando lo stato)
+        controller = new GameController(newSize, new BacktrackingSolver());
+        // Ripristino i valori e i blocchi dalla griglia caricata
+        controller.getGrid().setValues(loaded.getValuesCopy());
+        controller.getGrid().getBlocks().addAll(loaded.getBlocks());
+        size = newSize;
+
+        // Rimuovo il vecchio contenitore
+        remove(gridContainer);
+
+        gridPanel = new KenKenGridPanel(controller);  // Creo un nuovo KenKenGridPanel basato sul nuovo controller
+
+        // Creo nuovo contenitore centrato
+        gridContainer = new JPanel(new GridBagLayout());
+        gridContainer.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+
+        gridContainer.add(gridPanel);// Aggiungo il nuovo pannello della griglia al container
+
+        add(gridContainer, BorderLayout.CENTER);
+
+        clearSolutions();// Svuoto eventuali soluzioni precedenti e resetto l’indice
+        revalidate();// informare che al stutura dei componenti è cambiata
+        pack();  // attendo finestra
+        setLocationRelativeTo(null);
+
+        //Ricreo observer
+        observer = new GridStatusObserver(controller, statusLabel, prevBtn, nextBtn, gridPanel);
+        controller.addObserver(observer);
+
+        JOptionPane.showMessageDialog(this, "Caricato con successo!");
     }
 
 
