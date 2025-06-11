@@ -26,5 +26,16 @@ public final class BlockFactoryManager {
         return factory;
     }
 
+    // Metodo per registrare dinamicamente nuove factory
+    public static void register(String operator, BlockFactory factory) {
+        if (factories.containsKey(operator)) { // metodo sicuro , per non sovrascrivere operazioi per sbaglio
+            throw new IllegalArgumentException("Operatore già registrato: " + operator);
+        }
+        factories.put(operator, factory);
+    }
 
+    // Verifica se esiste già una factory per questo operatore
+    public static boolean isRegistered(String operator) {
+        return factories.containsKey(operator);
+    }
 }
