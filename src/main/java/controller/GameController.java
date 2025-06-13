@@ -73,15 +73,15 @@ public class GameController {
 
     /**SOLVE: */
     public List<int[][]> solvePuzzle(int maxSol) { // Metodo per risolvere il puzzle restituendo più soluzioni (fino a maxSol)
-        // 1. Verifica che ogni cella sia in un solo blocco
+        // Verifica che ogni cella sia in un solo blocco
         String coverageError = checkFullCoverage();
         if (coverageError != null) {
             JOptionPane.showMessageDialog(null, coverageError);
             return Collections.emptyList();
         }
 
-        // 2. Se la griglia è già completa, validala
-        if (isGridComplete()) {
+        // Se la griglia è già completa, validala
+        if (isGridComplete()) { // quinid se isGridComplete() == true (ossia tutte le celle riempite)
             String err = validateCurrentGrid();
             JOptionPane.showMessageDialog(null,
                     (err == null) ? "La soluzione corrente è corretta!" : err);
