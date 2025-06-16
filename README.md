@@ -32,6 +32,24 @@ I test sono disponibili in una cartella separata (test/), organizzata nei seguen
 - test.model
 Nota: Non viene usato Maven. JUnit 5 è stato aggiunto manualmente tramite IntelliJ IDEA (inserito nelle librerie del progetto)
 
+## Configurazione librerie (Junit 5)
+Per eseguire i test del progetto, è necessario configurare manualmente JUnit 5. Ecco come fare:
+
+scaricare le librerie già fornite nella cartella "lib"
+
+In caso di IntelliJ per configurarlo basta:
+1. Vai su File > Project Structure > Modules > Dependencies
+2. Clicca su + > JARs or directories
+3. Seleziona **tutti i file nella cartella lib**
+4. Imposta lo **Scope su Compile** 
+5. Applica e chiudi
+
+Imposta la cartella test/ come sorgente di test
+1. Vai su Project
+2. Clic destro sulla cartella test/ > Mark Directory as > Test Sources Root
+
+
 ## 👨‍💻 Autore
 Progetto sviluppato da **[Felice Dardis]**  
 per il corso di **[Ingegneria del Software]**
+
